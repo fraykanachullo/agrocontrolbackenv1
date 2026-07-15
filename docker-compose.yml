@@ -1,0 +1,87 @@
+services:
+  laravel.test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agrocontrol-app
+    working_dir: /app
+    volumes:
+      - .:/app
+      - ./storage:/app/storage
+      - ./bootstrap/cache:/app/bootstrap/cache
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - SERVER_NAME=:80
+      - APP_ENV=${APP_ENV:-local}
+      - APP_DEBUG=${APP_DEBUG:-true}
+      - APP_URL=${APP_URL:-http://localhost}
+      - DB_CONNECTION=${DB_CONNECTION:-pgsql}
+      - DB_HOST=${DB_HOST:-pgsql}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_DATABASE=${DB_DATABASE:-agrocontrol_db}
+      - DB_USERNAME=${DB_USERNAME:-agrocontrol}
+      - DB_PASSWORD=${DB_PASSWORD:-agrocontrol123}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-null}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+    depends_on:
+      - pgsql
+      - redis
+    networks:
+      - sail
+
+  pgsql:
+    image: postgres:17
+    container_name: agrocontrol-postgres
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-agrocontrol}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-agrocontrol123}
+      POSTGRES_DB: ${DB_DATABASE:-agrocontrol_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - sail
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: agrocontrol-mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - sail
+
+  redis:
+    image: redis:7-alpine
+    container_name: agrocontrol-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - sail
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: agrocontrol-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@agrocontrol.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    networks:
+      - sail
+    depends_on:
+      - pgsql
+
+networks:
+  sail:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
