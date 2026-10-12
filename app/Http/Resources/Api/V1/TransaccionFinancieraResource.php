@@ -18,6 +18,7 @@ class TransaccionFinancieraResource extends JsonResource
             'descripcion' => $this->descripcion,
             'fecha' => $this->fecha?->format('Y-m-d'),
             'estado_pago' => $this->estado_pago,
+            'etapa' => $this->etapa,
             'created_at' => $this->created_at,
         ];
     }

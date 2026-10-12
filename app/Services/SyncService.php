@@ -110,14 +110,16 @@ class SyncService
             try {
                 DB::beginTransaction();
 
+                $tipo = self::normalizarTipo($registro['tipo']);
                 $data = [
                     'campana_id' => $registro['campana_id'],
-                    'tipo' => $registro['tipo'],
+                    'tipo' => $tipo,
                     'categoria' => $registro['categoria'] ?? null,
+                    'etapa' => $registro['etapa'] ?? null,
                     'monto' => $registro['monto'],
                     'descripcion' => $registro['descripcion'] ?? null,
                     'fecha' => $registro['fecha'],
-                    'estado_pago' => $registro['estado_pago'] ?? 'pagado',
+                    'estado_pago' => self::normalizarEstadoPago($registro['estado_pago'] ?? null, $tipo),
                     'is_synced' => true,
                 ];
 
@@ -139,6 +141,25 @@ class SyncService
         }
 
         return compact('confirmados', 'rechazados');
+    }
+
+    /** La app guarda los egresos como "gasto". */
+    private static function normalizarTipo(string $tipo): string
+    {
+        return $tipo === 'gasto' ? 'egreso' : $tipo;
+    }
+
+    /**
+     * Estados válidos: pagado, por_cobrar (nos deben) y por_pagar (debemos).
+     * La app usa "pendiente" para ambos casos según el tipo.
+     */
+    private static function normalizarEstadoPago(?string $estado, string $tipo): string
+    {
+        return match ($estado) {
+            null, 'pagado' => 'pagado',
+            'pendiente', 'debe' => $tipo === 'egreso' ? 'por_pagar' : 'por_cobrar',
+            default => $estado,
+        };
     }
 
     public function syncCosechas(int $userId, array $registros): array

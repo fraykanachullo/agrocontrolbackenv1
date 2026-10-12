@@ -15,6 +15,7 @@ class TransaccionFinanciera extends Model
         'campana_id',
         'tipo',
         'categoria',
+        'etapa',
         'monto',
         'descripcion',
         'fecha',

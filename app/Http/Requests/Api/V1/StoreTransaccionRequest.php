@@ -16,10 +16,11 @@ class StoreTransaccionRequest extends FormRequest
         return [
             'tipo' => 'required|in:ingreso,egreso',
             'categoria' => 'nullable|string|max:60',
+            'etapa' => 'nullable|string|max:30',
             'monto' => 'required|numeric|min:0.01',
             'descripcion' => 'nullable|string|max:255',
             'fecha' => 'required|date',
-            'estado_pago' => 'required|in:pagado,por_cobrar',
+            'estado_pago' => 'required|in:pagado,por_cobrar,por_pagar',
         ];
     }
 
@@ -32,7 +33,7 @@ class StoreTransaccionRequest extends FormRequest
             'monto.min' => 'El monto debe ser mayor a 0.',
             'fecha.required' => 'La fecha es obligatoria.',
             'estado_pago.required' => 'El estado de pago es obligatorio.',
-            'estado_pago.in' => 'El estado de pago debe ser "pagado" o "por_cobrar".',
+            'estado_pago.in' => 'El estado de pago debe ser "pagado", "por_cobrar" o "por_pagar".',
         ];
     }
 }
