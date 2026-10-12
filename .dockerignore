@@ -12,6 +12,8 @@ public/storage
 .git
 .gitignore
 docker/
+!docker/php-conf/
+!docker/php-conf/99-app.ini
 .vscode/
 .idea/
 tests/

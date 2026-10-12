@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\ForgotPasswordRequest;
 use App\Http\Requests\Api\V1\LoginRequest;
 use App\Http\Requests\Api\V1\RegisterRequest;
+use App\Http\Requests\Api\V1\ResetPasswordRequest;
 use App\Http\Resources\Api\V1\UserResource;
 use App\Services\AuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -72,6 +75,36 @@ class AuthController extends Controller
             'success' => true,
             'data' => new UserResource($request->user()),
             'message' => 'Usuario obtenido exitosamente',
+        ]);
+    }
+
+    public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
+    {
+        $this->authService->forgotPassword($request->correo_electronico);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Si el correo está registrado, recibirá un enlace para restablecer su contraseña.',
+        ]);
+    }
+
+    public function resetPassword(ResetPasswordRequest $request): JsonResponse
+    {
+        $status = $this->authService->resetPassword(
+            $request->correo_electronico,
+            $request->token,
+            $request->password
+        );
+
+        if ($status !== Password::PASSWORD_RESET) {
+            throw ValidationException::withMessages([
+                'token' => ['El enlace de restablecimiento es inválido o ha expirado.'],
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Contraseña restablecida exitosamente. Ya puede iniciar sesión.',
         ]);
     }
 }

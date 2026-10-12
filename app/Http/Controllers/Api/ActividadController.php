@@ -25,13 +25,11 @@ class ActividadController extends Controller
         $actividades = $this->actividadRepo->getByCampana(
             $campana->id,
             $request->fecha_desde,
-            $request->fecha_hasta
+            $request->fecha_hasta,
+            $request->integer('per_page', 20)
         );
 
-        return response()->json([
-            'success' => true,
-            'data' => ActividadDiariaResource::collection($actividades),
-        ]);
+        return response()->json($this->paginated(ActividadDiariaResource::class, $actividades));
     }
 
     public function store(StoreActividadRequest $request, $campanaId): JsonResponse

@@ -72,6 +72,20 @@ class SyncController extends Controller
         ]);
     }
 
+    public function liquidarCosechas(BulkSyncRequest $request): JsonResponse
+    {
+        $result = $this->syncService->liquidarCosechas(
+            Auth::id(),
+            $request->registros
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $result,
+            'message' => count($result['confirmados']) . ' de ' . count($request->registros) . ' liquidaciones sincronizadas.',
+        ]);
+    }
+
     public function evidencias(UploadEvidenciaRequest $request): JsonResponse
     {
         $result = $this->syncService->uploadEvidencia(

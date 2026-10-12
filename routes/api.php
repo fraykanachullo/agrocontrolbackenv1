@@ -18,6 +18,8 @@ Route::prefix('v1')->group(function () {
     // =============================================
     Route::post('/auth/register', [AuthController::class, 'register']);
     Route::post('/auth/login', [AuthController::class, 'login']);
+    Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
 
     // =============================================
     // ===== RUTAS PROTEGIDAS (requieren token) =====
@@ -82,6 +84,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/actividades', [SyncController::class, 'actividades']);
             Route::post('/transacciones', [SyncController::class, 'transacciones']);
             Route::post('/cosechas-envios', [SyncController::class, 'cosechas']);
+            Route::post('/cosechas-envios/liquidar', [SyncController::class, 'liquidarCosechas']);
             Route::post('/evidencias/upload', [SyncController::class, 'evidencias']);
             Route::get('/pull', [SyncController::class, 'pull']);
         });

@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\Repositories\Contracts\UserRepositoryInterface;
+use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 
 class AuthService
 {
@@ -48,5 +50,29 @@ class AuthService
             'token' => $token,
             'token_type' => 'Bearer',
         ];
+    }
+
+    public function forgotPassword(string $email): string
+    {
+        return Password::broker()->sendResetLink(['email' => $email]);
+    }
+
+    public function resetPassword(string $email, string $token, string $password): string
+    {
+        return Password::broker()->reset(
+            [
+                'email' => $email,
+                'token' => $token,
+                'password' => $password,
+                'password_confirmation' => $password,
+            ],
+            function ($user, $password) {
+                $user->forceFill(['password' => Hash::make($password)])->save();
+
+                $user->tokens()->delete();
+
+                event(new PasswordReset($user));
+            }
+        );
     }
 }

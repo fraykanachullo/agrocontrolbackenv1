@@ -15,9 +15,9 @@ class CampanaService
         protected CosechaEnvioRepositoryInterface $cosechaRepo,
     ) {}
 
-    public function listar(int $userId)
+    public function listar(int $userId, int $perPage = 20)
     {
-        return $this->campanaRepo->getAllByUser($userId);
+        return $this->campanaRepo->getAllByUser($userId, $perPage);
     }
 
     public function obtener(int $id, int $userId)

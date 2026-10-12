@@ -3,10 +3,11 @@
 namespace App\Repositories\Contracts;
 
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 interface TransaccionRepositoryInterface
 {
-    public function getByCampana(int $campanaId, ?string $tipo = null, ?string $categoria = null, ?string $fechaDesde = null, ?string $fechaHasta = null): Collection;
+    public function getByCampana(int $campanaId, ?string $tipo = null, ?string $categoria = null, ?string $fechaDesde = null, ?string $fechaHasta = null, int $perPage = 20): LengthAwarePaginator;
     public function findById(int $id);
     public function create(array $data);
     public function update($transaccion, array $data);

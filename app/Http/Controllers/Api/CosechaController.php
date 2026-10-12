@@ -25,12 +25,13 @@ class CosechaController extends Controller
     {
         $campana = $this->campanaRepo->findByIdAndUser($campanaId, Auth::id());
 
-        $cosechas = $this->cosechaService->listar($campana->id, $request->estado);
+        $cosechas = $this->cosechaService->listar(
+            $campana->id,
+            $request->estado,
+            $request->integer('per_page', 20)
+        );
 
-        return response()->json([
-            'success' => true,
-            'data' => CosechaEnvioResource::collection($cosechas),
-        ]);
+        return response()->json($this->paginated(CosechaEnvioResource::class, $cosechas));
     }
 
     public function show($id): JsonResponse

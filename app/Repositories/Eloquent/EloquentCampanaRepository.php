@@ -5,14 +5,17 @@ namespace App\Repositories\Eloquent;
 use App\Models\Campana;
 use App\Repositories\Contracts\CampanaRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class EloquentCampanaRepository implements CampanaRepositoryInterface
 {
     public function __construct(protected Campana $model) {}
 
-    public function getAllByUser(int $userId): Collection
+    public function getAllByUser(int $userId, int $perPage = 20): LengthAwarePaginator
     {
-        return $this->model->where('user_id', $userId)->get();
+        return $this->model->where('user_id', $userId)
+            ->orderBy('fecha_inicio', 'desc')
+            ->paginate($perPage);
     }
 
     public function findByIdAndUser(int $id, int $userId)
@@ -99,6 +102,7 @@ class EloquentCampanaRepository implements CampanaRepositoryInterface
     {
         return $this->model->where('tenant_id', $tenantId)
             ->where('updated_at', '>', $since)
+            ->limit(2000)
             ->get();
     }
 }

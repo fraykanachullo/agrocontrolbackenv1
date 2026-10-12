@@ -17,14 +17,12 @@ class CampanaController extends Controller
         protected CampanaService $campanaService,
     ) {}
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $campanas = $this->campanaService->listar(Auth::id());
+        $perPage = $request->integer('per_page', 20);
+        $campanas = $this->campanaService->listar(Auth::id(), $perPage);
 
-        return response()->json([
-            'success' => true,
-            'data' => CampanaResource::collection($campanas),
-        ]);
+        return response()->json($this->paginated(CampanaResource::class, $campanas));
     }
 
     public function store(StoreCampanaRequest $request): JsonResponse

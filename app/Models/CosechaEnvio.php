@@ -14,6 +14,11 @@ class CosechaEnvio extends Model
     protected $fillable = [
         'campana_id',
         'tipo_venta',
+        'modo_cosecha',
+        'tipo_calculo_venta',
+        'unidad_empaque',
+        'total_bultos',
+        'peso_total_kg',
         'cantidad_unidades',
         'conductor',
         'mercado_destino',
@@ -28,6 +33,8 @@ class CosechaEnvio extends Model
     ];
 
     protected $casts = [
+        'total_bultos' => 'integer',
+        'peso_total_kg' => 'decimal:2',
         'cantidad_unidades' => 'decimal:2',
         'precio_unitario' => 'decimal:2',
         'descuentos_logistica' => 'decimal:2',
@@ -40,5 +47,10 @@ class CosechaEnvio extends Model
     public function campana()
     {
         return $this->belongsTo(Campana::class);
+    }
+
+    public function detalles()
+    {
+        return $this->hasMany(CosechaEnvioDetalle::class, 'cosecha_envio_id');
     }
 }

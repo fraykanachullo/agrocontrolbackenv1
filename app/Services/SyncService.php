@@ -7,6 +7,7 @@ use App\Repositories\Contracts\CampanaRepositoryInterface;
 use App\Repositories\Contracts\CosechaEnvioRepositoryInterface;
 use App\Repositories\Contracts\EvidenciaRepositoryInterface;
 use App\Repositories\Contracts\TransaccionRepositoryInterface;
+use App\Services\CosechaEnvioService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -18,6 +19,7 @@ class SyncService
         protected TransaccionRepositoryInterface $transaccionRepo,
         protected CosechaEnvioRepositoryInterface $cosechaRepo,
         protected EvidenciaRepositoryInterface $evidenciaRepo,
+        protected CosechaEnvioService $cosechaEnvioService,
     ) {}
 
     public function syncCampanas(int $userId, array $registros): array
@@ -151,6 +153,11 @@ class SyncService
                 $data = [
                     'campana_id' => $registro['campana_id'],
                     'tipo_venta' => $registro['tipo_venta'],
+                    'modo_cosecha' => $registro['modo_cosecha'] ?? null,
+                    'tipo_calculo_venta' => $registro['tipo_calculo_venta'] ?? null,
+                    'unidad_empaque' => $registro['unidad_empaque'] ?? null,
+                    'total_bultos' => $registro['total_bultos'] ?? null,
+                    'peso_total_kg' => $registro['peso_total_kg'] ?? null,
                     'cantidad_unidades' => $registro['cantidad_unidades'],
                     'conductor' => $registro['conductor'] ?? null,
                     'mercado_destino' => $registro['mercado_destino'] ?? null,
@@ -164,6 +171,10 @@ class SyncService
                 ];
 
                 $cosecha = $this->cosechaRepo->findOrCreateByUuid($registro['uuid_local'], $data);
+
+                if (!empty($registro['detalles'])) {
+                    $this->cosechaRepo->syncDetalles($cosecha, $registro['detalles']);
+                }
 
                 DB::commit();
 
@@ -204,6 +215,48 @@ class SyncService
         ];
     }
 
+    public function liquidarCosechas(int $userId, array $registros): array
+    {
+        $confirmados = [];
+        $rechazados = [];
+
+        $tenantId = auth()->user()->tenant_id;
+
+        foreach ($registros as $registro) {
+            try {
+                DB::beginTransaction();
+
+                $envio = $this->cosechaRepo->findByUuid($registro['cosecha_uuid'] ?? null);
+
+                if ($envio === null || $envio->campana->tenant_id !== $tenantId) {
+                    throw new \Exception('Envío no encontrado para líquidar.');
+                }
+
+                $this->cosechaEnvioService->liquidar($envio, [
+                    'precio_unitario' => $registro['precio_unitario'] ?? null,
+                    'descuentos_logistica' => $registro['descuentos_logistica'] ?? 0,
+                    'fecha_liquidacion' => $registro['fecha_liquidacion'],
+                    'detalles' => $registro['detalles'] ?? [],
+                ]);
+
+                DB::commit();
+
+                $confirmados[] = [
+                    'uuid_local' => $registro['uuid_local'],
+                    'id_remoto' => $envio->id,
+                ];
+            } catch (\Exception $e) {
+                DB::rollBack();
+                $rechazados[] = [
+                    'uuid_local' => $registro['uuid_local'],
+                    'error' => $e->getMessage(),
+                ];
+            }
+        }
+
+        return compact('confirmados', 'rechazados');
+    }
+
     public function pull(int $userId, $since): array
     {
         $tenantId = auth()->user()->tenant_id;
@@ -213,6 +266,7 @@ class SyncService
             'actividades' => $this->actividadRepo->getUpdatedAtSince($tenantId, $since),
             'transacciones' => $this->transaccionRepo->getUpdatedAtSince($tenantId, $since),
             'cosechas_envios' => $this->cosechaRepo->getUpdatedAtSince($tenantId, $since),
+            'cosecha_envio_detalles' => $this->cosechaRepo->getDetallesUpdatedAtSince($tenantId, $since),
             'since' => $since,
         ];
     }

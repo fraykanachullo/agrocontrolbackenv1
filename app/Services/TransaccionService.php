@@ -12,9 +12,9 @@ class TransaccionService
         protected TransaccionRepositoryInterface $repo,
     ) {}
 
-    public function listar(int $campanaId, ?string $tipo = null, ?string $categoria = null, ?string $fechaDesde = null, ?string $fechaHasta = null)
+    public function listar(int $campanaId, ?string $tipo = null, ?string $categoria = null, ?string $fechaDesde = null, ?string $fechaHasta = null, int $perPage = 20)
     {
-        return $this->repo->getByCampana($campanaId, $tipo, $categoria, $fechaDesde, $fechaHasta);
+        return $this->repo->getByCampana($campanaId, $tipo, $categoria, $fechaDesde, $fechaHasta, $perPage);
     }
 
     public function crear(array $data, int $campanaId)

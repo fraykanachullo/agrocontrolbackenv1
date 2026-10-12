@@ -7,7 +7,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 interface CampanaRepositoryInterface
 {
-    public function getAllByUser(int $userId): Collection;
+    public function getAllByUser(int $userId, int $perPage = 20): LengthAwarePaginator;
     public function findByIdAndUser(int $id, int $userId);
     public function countActivasByUser(int $userId): int;
     public function create(array $data);

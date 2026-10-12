@@ -30,13 +30,11 @@ class TransaccionController extends Controller
             $request->tipo,
             $request->categoria,
             $request->fecha_desde,
-            $request->fecha_hasta
+            $request->fecha_hasta,
+            $request->integer('per_page', 20)
         );
 
-        return response()->json([
-            'success' => true,
-            'data' => TransaccionFinancieraResource::collection($transacciones),
-        ]);
+        return response()->json($this->paginated(TransaccionFinancieraResource::class, $transacciones));
     }
 
     public function store(StoreTransaccionRequest $request, $campanaId): JsonResponse

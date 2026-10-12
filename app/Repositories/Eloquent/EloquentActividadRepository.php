@@ -5,12 +5,13 @@ namespace App\Repositories\Eloquent;
 use App\Models\ActividadDiaria;
 use App\Repositories\Contracts\ActividadRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class EloquentActividadRepository implements ActividadRepositoryInterface
 {
     public function __construct(protected ActividadDiaria $model) {}
 
-    public function getByCampana(int $campanaId, ?string $fechaDesde = null, ?string $fechaHasta = null): Collection
+    public function getByCampana(int $campanaId, ?string $fechaDesde = null, ?string $fechaHasta = null, int $perPage = 20): LengthAwarePaginator
     {
         $query = $this->model->where('campana_id', $campanaId);
 
@@ -21,7 +22,7 @@ class EloquentActividadRepository implements ActividadRepositoryInterface
             $query->whereDate('fecha', '<=', $fechaHasta);
         }
 
-        return $query->orderBy('fecha', 'desc')->get();
+        return $query->orderBy('fecha', 'desc')->paginate($perPage);
     }
 
     public function create(array $data)
@@ -45,6 +46,6 @@ class EloquentActividadRepository implements ActividadRepositoryInterface
     {
         return $this->model->whereHas('campana', function ($q) use ($tenantId) {
             $q->where('tenant_id', $tenantId);
-        })->where('updated_at', '>', $since)->get();
+        })->where('updated_at', '>', $since)->limit(2000)->get();
     }
 }
