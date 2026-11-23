@@ -69,6 +69,32 @@ class DashboardTest extends TestCase
             ->assertJsonPath('data.moneda', 'PEN');
     }
 
+    /** Un envío liquidado cuenta una sola vez en lo recaudado. */
+    public function test_envio_liquidado_no_se_cuenta_dos_veces(): void
+    {
+        $user = $this->setupUser();
+        $campana = $this->setupCampana($user);
+
+        $envio = $this->actingAs($user, 'sanctum')
+            ->postJson("/api/v1/campanas/{$campana->id}/cosechas-envios", [
+                'tipo_venta' => 'mercado',
+                'cantidad_unidades' => 100,
+                'conductor' => 'Juan',
+                'mercado_destino' => 'Lima',
+                'fecha_envio' => '2026-09-01',
+            ])->json('data.id');
+
+        $this->actingAs($user, 'sanctum')->patchJson("/api/v1/cosechas-envios/{$envio}/liquidar", [
+            'precio_unitario' => 30,
+            'descuentos_logistica' => 500,
+            'fecha_liquidacion' => '2026-09-04',
+        ])->assertOk();
+
+        $this->actingAs($user, 'sanctum')->getJson("/api/v1/campanas/{$campana->id}/dashboard")
+            ->assertOk()
+            ->assertJsonPath('data.total_recaudado', 2500);
+    }
+
     public function test_historial_devuelve_actividades_y_transacciones(): void
     {
         $user = $this->setupUser();

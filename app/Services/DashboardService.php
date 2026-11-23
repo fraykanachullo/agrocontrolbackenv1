@@ -19,16 +19,12 @@ class DashboardService
             ->where('tipo', 'egreso')
             ->sum('monto');
 
-        $totalRecaudadoDirecto = $campana->transaccionesFinancieras()
+        // Liquidar un envío ya crea su transacción de ingreso; sumar además
+        // monto_neto_final contaría la misma venta dos veces.
+        $totalRecaudado = $campana->transaccionesFinancieras()
             ->where('tipo', 'ingreso')
             ->where('estado_pago', 'pagado')
             ->sum('monto');
-
-        $totalRecaudadoLiquidado = $campana->cosechasEnvios()
-            ->where('estado', 'liquidado')
-            ->sum('monto_neto_final');
-
-        $totalRecaudado = $totalRecaudadoDirecto + $totalRecaudadoLiquidado;
 
         $cuentasPorCobrar = $campana->transaccionesFinancieras()
             ->where('estado_pago', 'por_cobrar')

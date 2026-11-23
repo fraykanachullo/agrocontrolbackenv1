@@ -62,7 +62,12 @@ class CosechaEnvioService
         $descuentos = (float) ($data['descuentos_logistica'] ?? 0);
         $detallesLiquidacion = $data['detalles'] ?? [];
 
-        if (!empty($detallesLiquidacion)) {
+        if (!empty($data['bruto_total'])) {
+            // Liquidación con el total de la boleta, sin precio por calidad.
+            $totalBruto = (float) $data['bruto_total'];
+            $items = [];
+            $precioReferencia = null;
+        } elseif (!empty($detallesLiquidacion)) {
             $resultado = $this->liquidarPorDetalles($envio, $detallesLiquidacion);
             $totalBruto = $resultado['total_bruto'];
             $items = $resultado['items'];

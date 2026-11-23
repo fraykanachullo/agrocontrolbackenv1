@@ -16,10 +16,13 @@ Route::prefix('v1')->group(function () {
     // =============================================
     // ===== RUTAS PÚBLICAS (sin autenticación) =====
     // =============================================
-    Route::post('/auth/register', [AuthController::class, 'register']);
-    Route::post('/auth/login', [AuthController::class, 'login']);
-    Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
-    Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
+    // Pocos intentos por minuto para frenar ataques de fuerza bruta.
+    Route::middleware('throttle:6,1')->group(function () {
+        Route::post('/auth/register', [AuthController::class, 'register']);
+        Route::post('/auth/login', [AuthController::class, 'login']);
+        Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
+        Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
+    });
 
     // =============================================
     // ===== RUTAS PROTEGIDAS (requieren token) =====

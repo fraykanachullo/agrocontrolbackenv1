@@ -2,6 +2,10 @@
 
 namespace App\Services;
 
+use App\Models\ActividadDiaria;
+use App\Models\Campana;
+use App\Models\CosechaEnvio;
+use App\Models\TransaccionFinanciera;
 use App\Repositories\Contracts\ActividadRepositoryInterface;
 use App\Repositories\Contracts\CampanaRepositoryInterface;
 use App\Repositories\Contracts\CosechaEnvioRepositoryInterface;
@@ -75,12 +79,13 @@ class SyncService
                 DB::beginTransaction();
 
                 $data = [
-                    'campana_id' => $registro['campana_id'],
+                    'campana_id' => $this->campanaDelUsuario($registro),
                     'descripcion' => $registro['descripcion'],
                     'fecha' => $registro['fecha'],
                     'is_synced' => true,
                 ];
 
+                $this->asegurarUuidDelUsuario(ActividadDiaria::class, $registro['uuid_local']);
                 $actividad = $this->actividadRepo->findOrCreateByUuid($registro['uuid_local'], $data);
 
                 DB::commit();
@@ -112,7 +117,7 @@ class SyncService
 
                 $tipo = self::normalizarTipo($registro['tipo']);
                 $data = [
-                    'campana_id' => $registro['campana_id'],
+                    'campana_id' => $this->campanaDelUsuario($registro),
                     'tipo' => $tipo,
                     'categoria' => $registro['categoria'] ?? null,
                     'etapa' => $registro['etapa'] ?? null,
@@ -123,6 +128,7 @@ class SyncService
                     'is_synced' => true,
                 ];
 
+                $this->asegurarUuidDelUsuario(TransaccionFinanciera::class, $registro['uuid_local']);
                 $transaccion = $this->transaccionRepo->findOrCreateByUuid($registro['uuid_local'], $data);
 
                 DB::commit();
@@ -172,7 +178,7 @@ class SyncService
                 DB::beginTransaction();
 
                 $data = [
-                    'campana_id' => $registro['campana_id'],
+                    'campana_id' => $this->campanaDelUsuario($registro),
                     'tipo_venta' => $registro['tipo_venta'],
                     'modo_cosecha' => $registro['modo_cosecha'] ?? null,
                     'tipo_calculo_venta' => $registro['tipo_calculo_venta'] ?? null,
@@ -191,6 +197,7 @@ class SyncService
                     'is_synced' => true,
                 ];
 
+                $this->asegurarUuidDelUsuario(CosechaEnvio::class, $registro['uuid_local']);
                 $cosecha = $this->cosechaRepo->findOrCreateByUuid($registro['uuid_local'], $data);
 
                 if (!empty($registro['detalles'])) {
@@ -217,6 +224,8 @@ class SyncService
 
     public function uploadEvidencia(int $userId, $archivo, ?string $uuidLocal, int $relacionId, string $relacionTipo): array
     {
+        EvidenciaService::asegurarRelacionDelUsuario($relacionId, $relacionTipo);
+
         $fechaDir = now()->format('Y/m/d');
         $path = $archivo->store("evidencias/{$fechaDir}", 'public');
 
@@ -234,6 +243,35 @@ class SyncService
             'ruta' => $path,
             'url' => Storage::url($path),
         ];
+    }
+
+    /**
+     * Campaña del registro, buscada por su uuid (lo que conoce el teléfono) o por id.
+     * El scope de tenant de Campana descarta las de otros usuarios.
+     */
+    private function campanaDelUsuario(array $registro): int
+    {
+        $campana = !empty($registro['campana_uuid'])
+            ? Campana::where('uuid_local', $registro['campana_uuid'])->first()
+            : Campana::find($registro['campana_id'] ?? null);
+
+        if ($campana === null) {
+            throw new \Exception('Campaña no encontrada.');
+        }
+
+        return $campana->id;
+    }
+
+    /**
+     * Si el uuid ya existe, el registro debe ser de una campaña del usuario;
+     * si no, otro usuario podría pisarlo o pasarlo a su campaña.
+     */
+    private function asegurarUuidDelUsuario(string $modelo, string $uuid): void
+    {
+        $existente = $modelo::where('uuid_local', $uuid)->first();
+        if ($existente !== null && Campana::find($existente->campana_id) === null) {
+            throw new \Exception('Registro no encontrado.');
+        }
     }
 
     public function liquidarCosechas(int $userId, array $registros): array
@@ -258,6 +296,7 @@ class SyncService
                     'descuentos_logistica' => $registro['descuentos_logistica'] ?? 0,
                     'fecha_liquidacion' => $registro['fecha_liquidacion'],
                     'detalles' => $registro['detalles'] ?? [],
+                    'bruto_total' => $registro['bruto_total'] ?? null,
                 ]);
 
                 DB::commit();
